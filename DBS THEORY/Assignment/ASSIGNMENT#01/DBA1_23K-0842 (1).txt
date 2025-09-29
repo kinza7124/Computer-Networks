@@ -1,0 +1,280 @@
+KINZA AFZAL 23K-0842 DB ASSIGNMENT # 01 
+
+Q2) 
+1. DDL
+CREATE TABLE MEMBERS(
+	MemberID INT PRIMARY KEY,
+	Name VARCHAR(100) NOT NULL,
+	Email VARCHAR(100) UNIQUE NOT NULL,
+	JoinDate DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE BOOKS(
+	BookID INT PRIMARY KEY,
+	Title VARCHAR(100) NOT NULL,
+	Author VARCHAR(100) NOT NULL,
+	CopiesAvailable INT CHECK (CopiesAvailable>=0)
+);
+
+CREATE TABLE IssuedBooks(
+	IssueID INT PRIMARY KEY,
+	MemberID INT,
+	BookID INT,
+	IssueDate DATE DEFAULT CURRENT_DATE,
+	ReturnDate DATE,
+	CONSTRAINT fk_member FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
+	CONSTRAINT fk_book FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+
+2. Database Catalog 
+In the document attached 
+
+3. DML Queries
+a. 
+INSERT INTO Members (MemberID, Name, Email) VALUES
+(1, 'Aisha Khan',  'aisha.khan@example.com'),
+(2, 'Bilal Ahmed', 'bilal.ahmed@example.com'),
+(3, 'Sara Iqbal',  'sara.iqbal@example.com');
+
+INSERT INTO Books (BookID, Title, Author, CopiesAvailable) VALUES
+(1001, 'Introduction to Algorithms', 'Cormen et al.', 3),
+(1002, 'Clean Code',                  'Robert C. Martin', 2),
+(1003, 'Database System Concepts',    'Korth & Silberschatz', 1);
+
+b. 
+INSERT INTO IssuedBooks (IssueID, MemberID, BookID) 
+VALUES (1, 1, 101);
+
+-- Update available copies
+UPDATE Books
+SET CopiesAvailable = CopiesAvailable - 1
+WHERE BookID = 101;  
+
+c. 
+SELECT m.Name AS MemberName, b.Title AS BookTitle
+FROM Members m
+JOIN IssuedBooks i ON m.MemberID = i.MemberID
+JOIN Books b ON i.BookID = b.BookID;
+
+4. Constraints Violation 
+a. Key constraint Violation
+-- Duplicate MemberID = 1
+INSERT INTO Members (MemberID, Name, Email) 
+VALUES (1, 'Duplicate User', 'dup@example.com');
+Since MemberID is the Primary Key for Members relation and Primary key's purpose is to uniquely identify each tuple, so duplicate value of MemberID is not allowed, hence this is the Key Constraint violation. 
+
+b. Referential integrity Violation
+-- MemberID 999 does not exist
+INSERT INTO IssuedBooks (IssueID, MemberID, BookID) 
+VALUES (2, 999, 101);  
+999 is not in Members[MemberID].
+This is called a referential integrity violation because the child table (IssuedBooks) is trying to reference a non-existent parent record in Members.
+
+c. Check Constraint Violation  
+-- Negative copies not allowed
+INSERT INTO Books (BookID, Title, Author, CopiesAvailable) 
+VALUES (104, 'Networks', 'Tanenbaum', -5);
+
+5. Critical Thinking
+- Penalty System: Track overdue books and calculate fines automatically.
+- Reservation System: Allow members to reserve books when no copies are available.
+
+6. Nested queries:
+a. 
+SELECT *
+FROM Members as M
+WHERE M.MemberID NOT IN (SELECT MemberID
+FROM IssuedBooks);
+
+b. 
+SELECT Title, CopiesAvailable 
+FROM Books
+WHERE CopiesAvailable =  
+(SELECT MAX(CopiesAvailable)
+FROM Books);
+
+c. 
+SELECT Name
+FROM Members
+WHERE MemberID = (
+SELECT MemberID
+FROM IssuedBooks
+GROUP BY MemberID 
+ORDER BY COUNT(*) DESC
+LIMIT 1
+); 
+This query assumes that there is only one most active member (i.e., one MemberID with the highest number of issued books).
+
+To show all members who tie for the maximum count of issued books
+SELECT Name
+FROM Members
+WHERE MemberID IN (
+    SELECT MemberID
+    FROM IssuedBooks
+    GROUP BY MemberID
+    HAVING COUNT(*) = (
+        SELECT MAX(cnt)
+        FROM (
+            SELECT COUNT(*) AS cnt
+            FROM IssuedBooks
+            GROUP BY MemberID
+        ) AS sub
+    )
+);
+
+d. 
+SELECT B.Title
+FROM Books as B
+WHERE B.BookID NOT IN (
+SELECT BookID
+FROM IssuedBooks);
+
+e. 
+SELECT M.Name,
+       (SELECT B.Title
+        FROM Books B
+        WHERE B.BookID = I.BookID) AS Title,
+       I.IssueDate
+FROM Members M
+WHERE M.MemberID IN (
+    SELECT MemberID
+    FROM IssuedBooks I
+    WHERE ReturnDate IS NULL
+      AND IssueDate < CURRENT_DATE - INTERVAL 30 DAY
+);
+
+Q3: 
+CREATE TABLE Patient(
+	Patient_ID INT PRIMARY KEY,
+	Name            VARCHAR(100) NOT NULL,
+    	Gender          CHAR(1) CHECK (Gender IN ('M','F')),
+    	DOB             DATE,
+    	Email           VARCHAR(150) UNIQUE,
+    	Phone           VARCHAR(20),
+    	Address         VARCHAR(255),
+    	Username        VARCHAR(50),
+    	Password        VARCHAR(100)
+);
+
+CREATE TABLE Doctor (
+    Doctor_ID       INT PRIMARY KEY,
+    Name            VARCHAR(100) NOT NULL,
+    Specialization  VARCHAR(100),
+    Username        VARCHAR(50),
+    Password        VARCHAR(100)
+);
+
+CREATE TABLE Appointment (
+    Appointment_ID      INT PRIMARY KEY,
+    Appointment_Date    DATE,
+    Appointment_Time    TIME,
+    Status              VARCHAR(30),
+    Clinic_Number       VARCHAR(20),
+    Patient_ID          INT,
+    Doctor_ID           INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Doctor_ID)  REFERENCES Doctor(Doctor_ID)
+);
+
+CREATE TABLE Prescription (
+    Prescription_ID     INT PRIMARY KEY,
+    Date                DATE,
+    Doctor_Advice       TEXT,
+    Followup_Required   BOOLEAN,
+    Patient_ID          INT,
+    Doctor_ID           INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Doctor_ID)  REFERENCES Doctor(Doctor_ID)
+);
+
+CREATE TABLE Invoice (
+    Invoice_ID      INT PRIMARY KEY,
+    Invoice_Date    DATE,
+    Amount          DECIMAL(10,2),
+    Payment_Status  VARCHAR(50),
+    Payment_Method  VARCHAR(50),
+    Patient_ID      INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID)
+);
+
+CREATE TABLE Tests (
+    Test_ID     INT PRIMARY KEY,
+    Blood_Test  VARCHAR(100),
+    X_Ray       VARCHAR(100),
+    MRI         VARCHAR(100),
+    CT_Scan     VARCHAR(100)
+);  
+
+DML QUERIES: 
+a) Assume Patient_ID =101's information needs to be updated.  
+UPDATE Patient
+SET Phone = '0300-1234567',
+    Email = 'newemail@example.com'
+WHERE Patient_ID = 101;       
+
+b) 
+UPDATE Invoice
+SET Payment_Status = 'Paid'
+WHERE Payment_Status = 'Unpaid'
+  AND Invoice_ID = 5001;      
+
+c) 
+DELETE FROM Appointment
+WHERE Status = 'Cancelled'; 
+
+d) 
+DELETE FROM Invoice
+WHERE Patient_ID = 101      
+  AND Payment_Status = 'Refunded';  
+
+e) 
+SELECT *
+FROM Appointment
+WHERE Status = 'Booked';  
+
+f) 
+SELECT *
+FROM Invoice
+WHERE Payment_Status = 'Unpaid';  
+
+g) 
+SELECT *
+FROM Tests
+WHERE Blood_Test IS NOT NULL;  
+
+h)   
+SELECT *
+FROM Prescription
+WHERE Date = '2025-09-02'; 
+
+Advanced SQL 
+a) 
+SELECT P.Name AS PatientName, D.Name AS DoctorName, A.Status
+FROM Patient P
+JOIN Appointment A ON P.Patient_ID = A.Patient_ID
+JOIN Doctor D ON A.Doctor_ID = D.Doctor_ID
+WHERE A.Status = 'Booked';
+
+b) 
+Assuming a doctor is linked to a test through Appointment.
+SELECT P.Name AS PatientName, D.Name AS DoctorName, 
+       T.Blood_Test, T.X_Ray, T.MRI, T.CT_Scan
+FROM Patient P
+JOIN Appointment A ON P.Patient_ID = A.Patient_ID
+JOIN Doctor D ON A.Doctor_ID = D.Doctor_ID
+JOIN Tests T ON T.Test_ID = A.Appointment_ID;
+
+c) 
+SELECT P.Name, PR.Doctor_Advice
+FROM Prescription PR
+JOIN Patient P ON PR.Patient_ID = P.Patient_ID
+WHERE P.Name = 'Ali Khan';
+
+d) 
+SELECT P.Name AS PatientName, D.Name AS DoctorName, PR.Doctor_Advice
+FROM Prescription PR
+JOIN Patient P ON PR.Patient_ID = P.Patient_ID
+JOIN Doctor D ON PR.Doctor_ID = D.Doctor_ID
+WHERE PR.Followup_Required = TRUE;
+
+
