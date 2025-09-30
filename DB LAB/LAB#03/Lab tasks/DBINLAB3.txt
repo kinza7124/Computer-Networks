@@ -1,0 +1,61 @@
+1-- Create tables
+CREATE TABLE students(
+  student_id NUMBER PRIMARY KEY,
+  student_name VARCHAR(50) NOT NULL,
+  email VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE courses(
+  course_id NUMBER NOT NULL,
+  course_name VARCHAR(50) NOT NULL
+);
+ALTER TABLE courses ADD CONSTRAINT pk_courseid PRIMARY KEY(course_id);
+
+CREATE TABLE enrollment(
+  enrollment_id NUMBER PRIMARY KEY,
+  enrollment_date DATE NOT NULL,
+  student_id NUMBER NOT NULL,
+  course_id NUMBER NOT NULL
+);
+ALTER TABLE enrollment ADD CONSTRAINT fk_stdid FOREIGN KEY (student_id) REFERENCES students(student_id);
+ALTER TABLE enrollment ADD CONSTRAINT fk_crsid FOREIGN KEY (course_id) REFERENCES courses(course_id);
+
+-- 2. Insert Data into Students
+INSERT INTO students VALUES (1, 'Ali Khan', 'ali@example.com');
+INSERT INTO students VALUES (2, 'Sara Ahmed', 'sara@example.com');
+INSERT INTO students VALUES (3, 'Usman Tariq', 'usman@example.com');
+INSERT INTO students VALUES (4, 'Hina Malik', 'hina@example.com');
+
+-- 3. Insert Multiple Rows into Courses
+INSERT ALL
+  INTO courses VALUES (101, 'Database Systems')
+  INTO courses VALUES (102, 'Computer Networks')
+  INTO courses VALUES (103, 'Software Engineering')
+  INTO courses VALUES (104, 'Operating Systems')
+SELECT * FROM dual;
+
+-- 4. Insert Multiple Rows into Enrollment
+INSERT ALL
+  INTO enrollment VALUES (1001, DATE '2024-09-01', 1, 101)
+  INTO enrollment VALUES (1002, DATE '2024-09-02', 2, 102)
+  INTO enrollment VALUES (1003, DATE '2024-09-03', 3, 103)
+  INTO enrollment VALUES (1004, DATE '2024-09-04', 4, 104)
+SELECT * FROM dual;
+
+-- 5. Update Record
+UPDATE students SET student_name = 'Ali Raza' WHERE student_id = 1;
+
+-- 6. Delete One Enrollment
+DELETE FROM enrollment WHERE enrollment_id = 1002;
+
+-- 7. Truncate Table
+TRUNCATE TABLE enrollment;
+
+-- 8. Drop Table
+DROP TABLE enrollment;
+
+-- 9. Alter Table (Add/Modify/Drop/Rename Columns)
+ALTER TABLE students ADD phone VARCHAR2(15);
+ALTER TABLE courses MODIFY course_name VARCHAR2(150);
+ALTER TABLE students DROP COLUMN phone;
+ALTER TABLE students RENAME COLUMN student_name TO full_name;
